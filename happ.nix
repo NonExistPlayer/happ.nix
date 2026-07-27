@@ -117,8 +117,6 @@ pkgs.stdenv.mkDerivation rec {
     homepage = "https://github.com/Happ-proxy/happ-desktop";
     platforms = [ "x86_64-linux" ];
     mainProgram = "happ";
-    # Happ is distributed as a closed-source, freely redistributable binary.
-    # The license field is intentionally left unset so importing this package
-    # does not force `allowUnfree` on users that do not already enable it.
+    license = lib.licenses.unfreeRedistributable;
   };
 }
