@@ -35,7 +35,7 @@ let
   ];
 in
 pkgs.stdenv.mkDerivation rec {
-  pname = "happ-desktop";
+  pname = "happ";
   version = "3.3.6";
 
   src = pkgs.fetchurl {
