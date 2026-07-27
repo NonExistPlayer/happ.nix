@@ -1,55 +1,87 @@
-# happ-nixos
+<div align="center">
 
-English | [Русский](README.ru.md)
+**English** | [Русский](README.ru.md)
+
+</div>
+
+> This repository is a fork and "flake-adaptation" of [happ-nixos](https://github.com/MrShitFox/happ-nixos).
+
+# `happ.nix`
 
 > Run the [Happ](https://github.com/Happ-proxy/happ-desktop) proxy client on NixOS — packaged properly, with a working HWID.
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-x86__64--linux-success)
-
 Happ ships as a prebuilt Debian package that assumes a regular FHS layout and a
 writable `/opt/happ` — neither of which exists on NixOS. This module repackages it
-for the Nix store and wires up everything needed to run it cleanly, including the
-**HWID fix** the plain `.deb` can't manage on a modern NixOS.
+for the Nix store and wires up everything needed to run it cleanly.
 
-## Features
+Flake includes:
 
-- 📦 **Nix-native packaging** — autoPatchelf + Qt wrapping, no FHS hacks
-- 🔑 **Working HWID** — restores the device id dbus-broker leaves empty
-- 🛡️ **TUN-mode ready** — firewall, `tun` module, and a root control daemon
-- ⚡ **Fast rebuilds** — `/opt/happ` is refreshed only when the package changes
+- **Native Nix packaging**
+- **Working HWID**
+- **TUN-mode ready**
+- **Fast rebuilds**
 
 ## Installation
 
-Clone into `/etc/nixos`:
+> [!TIP]
+> This flake has an output `apps`, which allows you to run Happ via `nix run`.
+>
+> You can try this flake before installing it!
+> ```bash
+> nix run github:NonExistPlayer/happ.nix
+> ```
 
-```bash
-cd /etc/nixos
-sudo git clone https://github.com/MrShitFox/happ-nixos
+Add in your flake configuration a new input:
+```nix
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    happ = {
+      url = "github:NonExistPlayer/happ.nix";
+      inputs.nixpkgs.follows = "nixpkgs"; # optional
+    };
+  };
 ```
 
-Import the module and enable it in your `configuration.nix`:
+And next in `nixosConfigurations`, add `nixosModules` from this flake:
 
 ```nix
-{
-  imports = [ ./happ-nixos/happ-module.nix ];
+  outputs = inputs@{ self, nixpkgs, ... }: {
+    nixosConfigurations.pc =
+       nixpkgs.lib.nixosSystem {
+         system = "x86_64-linux";
+         modules = [
+           ./hosts/pc
+           inputs.happ.nixosModules.default
+         ];
+       };
+  };
+```
 
+Now just enable Happ:
+
+```nix
+{ ... }:
+{
   services.happ.enable = true;
 }
 ```
 
-Rebuild, then launch **Happ** from your app menu (or run `happ`):
-
-```bash
-sudo nixos-rebuild switch
-```
-
-## Updating
-
-```bash
-cd /etc/nixos/happ-nixos && sudo git pull
-sudo nixos-rebuild switch
-```
+> [!WARNING]
+> Don't install package directly, like this:
+> ```nix
+> { pkgs, ... }:
+> {
+>   environment.systemPackages =
+>     let
+>       happ = inputs.happ.packages.default;
+>     in
+>     [
+>       happ
+>     ];
+> }
+> ```
+> You will lose all main and important features of this flake, including HWID fix.
 
 ## Options
 
@@ -101,8 +133,8 @@ software regardless of which platform backend (Wayland or XCB) is active.
 ## Notes
 
 - Protocols: VLESS, VMess, Trojan, Shadowsocks over TUN. Hysteria2 is not supported.
-- Happ is a closed-source but freely redistributable binary; the package leaves its
-  license unset, so `allowUnfree` is not required.
+- Happ have an unfree/distributable license. You'll need to enable `allowUnfree`
+  or allow in other ways.
 - Unofficial community module — not affiliated with the Happ project.
 
 ### Security trade-offs
