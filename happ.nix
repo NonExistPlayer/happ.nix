@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> { }, forceXwayland ? false, forceSoftwareRendering ? false }:
+{ pkgs, forceXwayland ? false, forceSoftwareRendering ? false }:
 
 let
   lib = pkgs.lib;
